@@ -1,4 +1,4 @@
-.PHONY: build push deploy ns cwagent fluentd destroy restart kubedash ui clean  
+.PHONY: build push deploy ns destroy restart update ui clean  
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -12,7 +12,6 @@ build:
 	docker build -t aggregator/airflow:latest -f config/docker/Dockerfile .
 	
 push:
-	aws ecr get-login --no-include-email --region us-west-1 --no-verify-ssl | echo $($0)
 	docker tag aggregator/airflow:latest gcr.io/amaforge-scry/aggregator-airflow
 	docker push gcr.io/amaforge-scry/aggregator-airflow
 
@@ -20,17 +19,28 @@ ns:
 	kubectl create namespace airflow;
 	
 deploy:
-	kubectl apply -f config/kube/git-credentials.secret.yaml --namespace airflow
-	kubectl apply -f config/kube/airflow-role-binding.yaml --namespace airflow
-	helm install -f config/helm/charts/airflow-{{ cookiecutter.airflow_executor.lower() }}.yaml --namespace airflow airflow stable/airflow
+	kubectl apply -f config/kube/airflow-credentials.secret.yaml 
+	kubectl apply -f config/kube/airflow-role-binding.yaml
+	kubectl apply -f config/kube/postgres.yaml
+	kubectl apply -f config/kube/configmap.yaml
+	kubectl apply -f config/kube/volumes.yaml
+	kubectl apply -f config/kube/pvc.yaml
+	kubectl apply -f config/kube/airflow.yaml
+
+update:
+	make build
+	make push
+	kubectl rollout restart deployment/airflow -n=airflow
 
 restart:
 	make destroy
-	make ns
+	make build
+	make push
 	make deploy
+	kubectl rollout restart deployment/airflow -n=airflow
 
 ui:
-	kubectl -n airflow port-forward $(pod) 8080:8080
+	kubectl -n airflow port-forward $(pod) 8092:8092
 
 clean:
 	docker stop $(docker ps -a -q)

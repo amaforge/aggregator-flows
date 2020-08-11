@@ -68,6 +68,9 @@ RUN set -ex \
         /usr/share/doc-base
 
 COPY scripts/entrypoint.sh /entrypoint.sh
+COPY scripts/airflow-test-env-init.sh ${AIRFLOW_USER_HOME}/tmp/airflow-test-env-init.sh
+RUN chmod +x /entrypoint.sh
+RUN chmod +x ${AIRFLOW_USER_HOME}/tmp/airflow-test-env-init.sh
 COPY requirements.txt ./
 RUN mkdir -p dags
 COPY dags $AIRFLOW_HOME/dags
@@ -76,9 +79,8 @@ RUN pip install -r requirements.txt
 
 RUN chown -R airflow: ${AIRFLOW_USER_HOME}
 
-EXPOSE 8080 5555 8793
+EXPOSE 8092 5558 8793
 
 USER airflow
 WORKDIR ${AIRFLOW_USER_HOME}
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["webserver"]

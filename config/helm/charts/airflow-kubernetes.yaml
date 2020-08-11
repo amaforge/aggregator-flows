@@ -2,13 +2,13 @@
 airflow:
   extraConfigmapMounts: []
   extraEnv:
-  fernetKey: "{{cookiecutter.fernet_key}}"
+  fernetKey: Dl08nX0H12Of3oFXs_r5Wt32Q5YdevQ_ukABktJ266o=
   service:
     annotations: {}
     sessionAffinity: "None"
     sessionAffinityConfig: {}
     type: ClusterIP
-    externalPort: 8080
+    externalPort: 8092
     nodePort:
       http:
   executor: Celery
@@ -31,7 +31,7 @@ airflow:
     AIRFLOW__KUBERNETES__WORKER_CONTAINER_IMAGE_PULL_POLICY: Always
     AIRFLOW__KUBERNETES__NAMESPACE: airflow
     AIRFLOW__KUBERNETES__DAGS_VOLUME_CLAIM: airflow-dags
-    AIRFLOW__KUBERNETES__GIT_REPO: {{cookiecutter.git_repo_to_sync_dags}}
+    AIRFLOW__KUBERNETES__GIT_REPO: https://github.com/amaforge/aggregator-flows.git
     AIRFLOW__KUBERNETES__GIT_BRANCH: master
     AIRFLOW__KUBERNETES__GIT_SUBPATH: dags
     AIRFLOW__KUBERNETES__GIT_SYNC_CREDENTIALS_SECRET: git-credentials
@@ -88,14 +88,14 @@ flower:
   service:
     annotations: {}
     type: ClusterIP
-    externalPort: 5555
+    externalPort: 5558
   nodeSelector: {}
   affinity: {}
   tolerations: []
   extraConfigmapMounts: []
 
 web:
-  baseUrl: "http://localhost:8080"
+  baseUrl: "http://localhost:8092"
   resources: {}
   labels: {}
   annotations: {}
@@ -170,7 +170,7 @@ dags:
   path: /usr/local/airflow/dags
   doNotPickle: false
   git:
-    url: {{cookiecutter.git_repo_to_sync_dags}}
+    url: https://github.com/amaforge/aggregator-flows.git
     ref: master
     secret: "generic git-sync-secret"
     repoHost: "github.com"
@@ -205,7 +205,7 @@ serviceAccount:
 ## ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
 postgresql:
   enabled: true
-    existingSecret: airflow-secrests
+    existingSecret: airflow-credentials
     existingSecretKey: postgresql
   service:
     port: 5432

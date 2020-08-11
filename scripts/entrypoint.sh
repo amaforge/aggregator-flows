@@ -104,11 +104,13 @@ if [ "$AIRFLOW__CORE__EXECUTOR" = "CeleryExecutor" ]; then
 fi
 
 case "$1" in
+  initdb)
+    exec airflow initdb
+    ;;
   webserver)
-    airflow initdb
     if [ "$AIRFLOW__CORE__EXECUTOR" = "LocalExecutor" ] || [ "$AIRFLOW__CORE__EXECUTOR" = "SequentialExecutor" ]; then
       # With the "Local" and "Sequential" executors it should all run in one container.
-      airflow scheduler &
+      exec airflow scheduler &
     fi
     exec airflow webserver
     ;;
@@ -122,10 +124,12 @@ case "$1" in
     exec airflow "$@"
     ;;
   version)
+    sleep 10
     exec airflow "$@"
     ;;
   *)
     # The command is something like bash, not an airflow subcommand. Just run it in the right environment.
+    sleep 10
     exec "$@"
     ;;
 esac
