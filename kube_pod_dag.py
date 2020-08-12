@@ -17,50 +17,21 @@ company_onboarding = DAG('kube-operator',
                          default_args=default_args,
                          schedule_interval=timedelta(days=1))
 with company_onboarding:
-    t1 = KubernetesPodOperator(namespace='airflow',
-                               image="ubuntu:16.04",
-                               cmds=["bash", "-cx"],
-                               arguments=["echo", "hello world 1"],
-                               labels={'runner': 'airflow'},
-                               name="pod1",
-                               task_id='pod1',
-                               is_delete_operator_pod=True,
-                               hostnetwork=False,
-                               )
+    pod_task_xcom = GKEStartPodOperator(
+                        task_id="pod_task_xcom",
+                        project_id="amaforge-scry",
+                        location="us-central1-b",
+                        cluster_name="scry-2",
+                        do_xcom_push=True,
+                        namespace="default",
+                        image="alpine",
+                        cmds=["sh", "-c", 'mkdir -p /airflow/xcom/;echo \'[1,2,3,4]\' > /airflow/xcom/return.json'],
+                        name="test-pod-xcom",
+                    )
 
-    t2 = KubernetesPodOperator(namespace='airflow',
-                               image="ubuntu:16.04",
-                               cmds=["bash", "-cx"],
-                               arguments=["echo", "hello world 2"],
-                               labels={'runner': 'airflow'},
-                               name="pod2",
-                               task_id='pod2',
-                               is_delete_operator_pod=True,
-                               hostnetwork=False,
-                               )
+    pod_task_xcom_result = BashOperator(
+                              bash_command="echo \"{{ task_instance.xcom_pull('pod_task_xcom')[0] }}\"",
+                              task_id="pod_task_xcom_result",
+                          )
 
-    t3 = KubernetesPodOperator(namespace='airflow',
-                               image="ubuntu:16.04",
-                               cmds=["bash", "-cx"],
-                               arguments=["echo", "hello world 3"],
-                               labels={'runner': 'airflow'},
-                               name="pod3",
-                               task_id='pod3',
-                               is_delete_operator_pod=True,
-                               hostnetwork=False,
-                               )
-
-    t4 = KubernetesPodOperator(namespace='airflow',
-                               image="ubuntu:16.04",
-                               cmds=["bash", "-cx"],
-                               arguments=["echo", "hello world 4"],
-                               labels={'runner': 'airflow'},
-                               name="pod4",
-                               task_id='pod4',
-                               is_delete_operator_pod=True,
-                               hostnetwork=False,
-                               )
-
-    company_onboarding.doc_md = __doc__
-
-    t1 >> [t2, t3] >> t4
+    pod_task_xcom>> pod_task_xcom_result
